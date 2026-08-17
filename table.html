@@ -448,7 +448,10 @@
           }
         });
 
-        schedule.push({ period: periodNum, time: timeStr, cells });
+        // 8교시는 생략
+        if (periodNum !== "8") {
+          schedule.push({ period: periodNum, time: timeStr, cells });
+        }
       }
 
       return { days, schedule };

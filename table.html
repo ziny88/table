@@ -145,7 +145,7 @@
       font-size: 0.95rem;
       line-height: 1.6;
     }
-      /* 모바일 대응 */
+    /* 모바일 대응 */
     @media (max-width: 640px) {
       body {
         padding: 8px;
@@ -199,21 +199,24 @@
     /* 아주 작은 화면 */
     @media (max-width: 380px) {
       th, td {
-        height: 44px;
-        padding: 3px 1px;
+        height: 52px;
+        padding: 5px 2px;
       }
       th.period {
-        width: 48px;
-        font-size: 0.7rem;
+        width: 56px;
+        font-size: 0.85rem;
+      }
+      th.period .time {
+        font-size: 0.68rem;
       }
       .cell-content .code {
-        font-size: 0.78rem;
+        font-size: 0.95rem;
       }
       .cell-content .subject {
-        font-size: 0.65rem;
+        font-size: 0.78rem;
       }
       header h1 {
-        font-size: 1.1rem;
+        font-size: 1.25rem;
       }
     }
   </style>
@@ -252,14 +255,43 @@
   </div>
 
   <script>
-    // 학급 번호별 색상
-    const COLOR_MAP = {
-      "206": { bg: "#fed7d7", fg: "#9b2c2c" },
-      "201": { bg: "#feebc8", fg: "#9c4221" },
-      "205": { bg: "#c6f6d5", fg: "#276749" },
-      "203": { bg: "#e9d8fd", fg: "#553c9a" },
-      "107": { bg: "#bee3f8", fg: "#2b6cb0" },
-    };
+    // 학급 번호별 색상 팔레트 (충분한 개수)
+    const COLOR_PALETTE = [
+      { bg: "#fed7d7", fg: "#9b2c2c" }, // 빨강
+      { bg: "#feebc8", fg: "#9c4221" }, // 주황
+      { bg: "#fefcbf", fg: "#975a16" }, // 노랑
+      { bg: "#c6f6d5", fg: "#276749" }, // 초록
+      { bg: "#bee3f8", fg: "#2b6cb0" }, // 파랑
+      { bg: "#e9d8fd", fg: "#553c9a" }, // 보라
+      { bg: "#fbb6ce", fg: "#97266d" }, // 분홍
+      { bg: "#b2f5ea", fg: "#285e61" }, // 청록
+      { bg: "#faf089", fg: "#744210" }, // 연노랑
+      { bg: "#c3dafe", fg: "#3c366b" }, // 남색
+      { bg: "#fbd38d", fg: "#7b341e" }, // 살구
+      { bg: "#9ae6b4", fg: "#22543d" }, // 연두
+      { bg: "#90cdf4", fg: "#2a4365" }, // 하늘
+      { bg: "#d6bcfa", fg: "#44337a" }, // 연보라
+      { bg: "#feb2b2", fg: "#822727" }, // 연분홍
+      { bg: "#81e6d9", fg: "#234e52" }, // 민트
+    ];
+
+    // 이번 시간표에 등장하는 고유 번호에 순서대로 색 배정
+    let colorCache = {};
+    let nextColorIndex = 0;
+
+    function resetColors() {
+      colorCache = {};
+      nextColorIndex = 0;
+    }
+
+    function getColor(code) {
+      if (!code) return { bg: "#edf2f7", fg: "#4a5568" };
+      if (colorCache[code]) return colorCache[code];
+      const color = COLOR_PALETTE[nextColorIndex % COLOR_PALETTE.length];
+      colorCache[code] = color;
+      nextColorIndex++;
+      return color;
+    }
 
     const DAY_COLORS = ["#e53e3e", "#dd6b20", "#d69e2e", "#38a169", "#3182ce"];
 
@@ -349,6 +381,7 @@
         throw new Error("엑셀에 데이터가 없습니다.");
       }
 
+      resetColors();  // 새 파일 로드 시 색상 다시 배정
       const { days, schedule } = parseSchedule(rows);
       renderTable(days, schedule);
       dateRangeEl.textContent = "";
@@ -391,10 +424,10 @@
         }
 
         // 코드 행
-        const codes = row.slice(1).map(c => (c == null ? "" : String(c).trim()));
+        const rawCodes = row.slice(1).map(c => (c == null ? "" : String(c).trim()));
 
         // 다음 행이 과목 행인지 확인 (첫 열이 null인 경우)
-        let subjects = new Array(codes.length).fill("");
+        let subjects = new Array(rawCodes.length).fill("");
         if (i + 1 < rows.length && (rows[i + 1][0] == null || rows[i + 1][0] === "")) {
           subjects = rows[i + 1].slice(1).map(s => (s == null ? "" : String(s).trim()));
           i += 2;
@@ -402,10 +435,18 @@
           i += 1;
         }
 
-        const cells = codes.map((code, idx) => ({
-          code,
-          subject: subjects[idx] || ""
-        }));
+        // 숫자(학급번호)가 아닌 값은 과목명으로 취급 (예: 동아리)
+        const cells = rawCodes.map((val, idx) => {
+          const isNumeric = /^\d+$/.test(val);
+          if (isNumeric) {
+            return { code: val, subject: subjects[idx] || "" };
+          } else if (val) {
+            // 동아리처럼 번호 자리에 글자가 있는 경우
+            return { code: "", subject: val };
+          } else {
+            return { code: "", subject: subjects[idx] || "" };
+          }
+        });
 
         schedule.push({ period: periodNum, time: timeStr, cells });
       }
@@ -429,7 +470,7 @@
           if (!cell.code && !cell.subject) {
             cellsHtml += `<td class="empty"></td>`;
           } else {
-            const colors = COLOR_MAP[cell.code] || { bg: "#edf2f7", fg: "#4a5568" };
+            const colors = getColor(cell.code);
             const codeHtml = cell.code ? `<span class="code">${cell.code}</span>` : "";
             const subjHtml = cell.subject ? `<span class="subject">${cell.subject}</span>` : "";
             cellsHtml += `<td style="background:${colors.bg};color:${colors.fg}">
@@ -470,7 +511,7 @@
       const file = e.dataTransfer.files[0];
       if (file && (file.name.endsWith(".xlsx") || file.name.endsWith(".xls"))) {
         lastFile = file;
-        loadExcelFile(file);
+        loadExcelFromFile(file);
       } else {
         setStatus("엑셀 파일(.xlsx)만 가능합니다.", "error");
       }

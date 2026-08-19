@@ -28,15 +28,23 @@
       padding: 18px 24px;
       text-align: center;
     }
+    .header-title {
+      display: flex;
+      justify-content: center;
+      align-items: baseline;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
     header h1 {
       font-size: 1.45rem;
       font-weight: 700;
       letter-spacing: -0.5px;
     }
-    header p {
-      margin-top: 4px;
-      font-size: 0.88rem;
-      opacity: 0.85;
+    #file-name {
+      font-size: 1.05rem;
+      font-weight: 500;
+      opacity: 0.9;
+      letter-spacing: -0.3px;
     }
     .controls {
       padding: 16px 20px;
@@ -137,44 +145,32 @@
       border-top: 1px solid #edf2f7;
       background: #f7fafc;
     }
-    footer .radio-wrap {
+    footer .select-wrap {
       display: flex;
       justify-content: center;
       align-items: center;
-      gap: 12px 18px;
+      gap: 12px;
       flex-wrap: wrap;
-      margin-top: 6px;
     }
-    footer .radio-item {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      cursor: pointer;
-      padding: 6px 12px;
+    footer label {
+      font-weight: 600;
+      color: #2d3748;
+    }
+    footer select {
+      padding: 8px 14px;
       border-radius: 8px;
-      background: #edf2f7;
-      transition: background 0.15s;
-      user-select: none;
-    }
-    footer .radio-item:hover {
-      background: #e2e8f0;
-    }
-    footer .radio-item input {
-      accent-color: #2c5282;
-      width: 16px;
-      height: 16px;
+      border: 1px solid #cbd5e0;
+      font-size: 0.95rem;
+      background: #fff;
+      color: #2d3748;
       cursor: pointer;
+      min-width: 160px;
+      font-weight: 500;
     }
-    footer .radio-item span {
-      font-weight: 600;
-      color: #2d3748;
-      font-size: 0.9rem;
-    }
-    footer .radio-label {
-      font-weight: 600;
-      color: #2d3748;
-      margin-bottom: 4px;
-      display: block;
+    footer select:focus {
+      outline: none;
+      border-color: #2c5282;
+      box-shadow: 0 0 0 2px rgba(44, 82, 130, 0.2);
     }
     .placeholder {
       text-align: center;
@@ -188,7 +184,7 @@
       .container { border-radius: 8px; max-width: 100%; }
       header { padding: 14px 12px; }
       header h1 { font-size: 1.35rem; }
-      header p { font-size: 0.85rem; }
+      #file-name { font-size: 0.95rem; }
       .table-wrap { padding: 12px 6px 10px; }
       table { font-size: 0.95rem; }
       th, td { height: 56px; padding: 6px 3px; }
@@ -199,7 +195,7 @@
       .controls { padding: 12px 10px; gap: 8px; }
       .controls button, .controls label.btn { padding: 8px 14px; font-size: 0.9rem; }
       footer { padding: 10px 12px 14px; }
-      footer .radio-item span { font-size: 0.85rem; }
+      footer select { font-size: 0.9rem; padding: 7px 12px; min-width: 140px; }
     }
     @media (max-width: 380px) {
       th, td { height: 52px; padding: 5px 2px; }
@@ -208,14 +204,17 @@
       .cell-content .code { font-size: 0.95rem; }
       .cell-content .subject { font-size: 0.78rem; }
       header h1 { font-size: 1.25rem; }
+      #file-name { font-size: 0.9rem; }
     }
   </style>
 </head>
 <body>
   <div class="container">
     <header>
-      <h1>개인 시간표</h1>
-      <p id="date-range"></p>
+      <div class="header-title">
+        <h1>개인 시간표</h1>
+        <span id="file-name"></span>
+      </div>
     </header>
     <div class="controls">
       <label class="btn">
@@ -232,9 +231,11 @@
       </div>
     </div>
     <footer>
-      <span class="radio-label">시간표 파일 선택</span>
-      <div class="radio-wrap" id="radioWrap">
-        <!-- 여기에 동적으로 라디오 버튼이 생성됩니다 -->
+      <div class="select-wrap">
+        <label for="tableSelect">시간표 파일 선택</label>
+        <select id="tableSelect">
+          <!-- 동적으로 채워집니다 -->
+        </select>
       </div>
     </footer>
   </div>
@@ -277,12 +278,12 @@
     const fileInput = document.getElementById("fileInput");
     const statusEl = document.getElementById("status");
     const tableArea = document.getElementById("tableArea");
-    const dateRangeEl = document.getElementById("date-range");
+    const fileNameEl = document.getElementById("file-name");
     const reloadBtn = document.getElementById("reloadBtn");
-    const radioWrap = document.getElementById("radioWrap");
+    const tableSelect = document.getElementById("tableSelect");
 
     let lastFile = null;
-    let currentTable = "table1.xlsx"; // 기본값 (파일명 포함)
+    let currentTable = "table1.xlsx";
 
     // 기본 폴백 목록
     const DEFAULT_FILES = ["table1.xlsx", "table2.xlsx", "table3.xlsx", "table4.xlsx", "table5.xlsx"];
@@ -301,6 +302,12 @@
       });
     });
 
+    // 드롭다운 변경 시 로드
+    tableSelect.addEventListener("change", () => {
+      currentTable = tableSelect.value;
+      loadExcelFromServer();
+    });
+
     function setStatus(msg, type = "") {
       statusEl.textContent = msg;
       statusEl.className = "status " + type;
@@ -316,19 +323,14 @@
         const parser = new DOMParser();
         const doc = parser.parseFromString(html, "text/html");
 
-        // 다양한 서버의 디렉터리 리스팅을 최대한 커버
         const links = Array.from(doc.querySelectorAll("a"))
           .map(a => a.getAttribute("href") || "")
           .filter(href => {
             const lower = href.toLowerCase();
             return lower.endsWith(".xlsx") || lower.endsWith(".xls");
           })
-          .map(href => {
-            // "./table1.xlsx" 또는 "table1.xlsx" → "table1.xlsx"
-            return href.replace(/^\.\//, "").split("/").pop();
-          });
+          .map(href => href.replace(/^\.\//, "").split("/").pop());
 
-        // 중복 제거 + 정렬
         const unique = [...new Set(links)].filter(Boolean).sort();
         if (unique.length === 0) throw new Error("xlsx 파일 없음");
 
@@ -339,40 +341,18 @@
       }
     }
 
-    // 라디오 버튼 생성
-    function renderRadios(files) {
-      radioWrap.innerHTML = "";
+    // 드롭다운 옵션 생성
+    function renderSelectOptions(files) {
+      tableSelect.innerHTML = "";
       files.forEach((file, idx) => {
-        const id = "radio_" + idx;
-        const labelText = file.replace(/\.xlsx?$/i, ""); // 확장자 제거한 제목
-
-        const label = document.createElement("label");
-        label.className = "radio-item";
-        label.htmlFor = id;
-
-        const input = document.createElement("input");
-        input.type = "radio";
-        input.name = "tableFile";
-        input.id = id;
-        input.value = file;
+        const option = document.createElement("option");
+        option.value = file;
+        option.textContent = file.replace(/\.xlsx?$/i, ""); // 확장자 제거한 제목
         if (file === currentTable || (idx === 0 && !files.includes(currentTable))) {
-          input.checked = true;
+          option.selected = true;
           currentTable = file;
         }
-
-        input.addEventListener("change", () => {
-          if (input.checked) {
-            currentTable = file;
-            loadExcelFromServer();
-          }
-        });
-
-        const span = document.createElement("span");
-        span.textContent = labelText;
-
-        label.appendChild(input);
-        label.appendChild(span);
-        radioWrap.appendChild(label);
+        tableSelect.appendChild(option);
       });
     }
 
@@ -422,7 +402,14 @@
       resetColors();
       const { days, schedule } = parseSchedule(rows);
       renderTable(days, schedule);
-      dateRangeEl.textContent = sourceName ? `파일: ${sourceName}` : "";
+
+      // 파일명만 표시 (확장자 제거)
+      if (sourceName) {
+        const pureName = sourceName.replace(/\.xlsx?$/i, "");
+        fileNameEl.textContent = pureName;
+      } else {
+        fileNameEl.textContent = "";
+      }
     }
 
     function parseSchedule(rows) {
@@ -535,8 +522,7 @@
     // 초기화
     (async function init() {
       const files = await discoverXlsxFiles();
-      renderRadios(files);
-      // 첫 번째(또는 선택된) 파일 자동 로드
+      renderSelectOptions(files);
       await loadExcelFromServer();
     })();
   </script>

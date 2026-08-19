@@ -4,7 +4,6 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>개인 시간표</title>
-  <!-- SheetJS (xlsx) CDN - 브라우저에서 엑셀을 직접 읽기 위해 사용 -->
   <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -77,7 +76,6 @@
     }
     .status.error { color: #c53030; }
     .status.success { color: #276749; }
-
     .table-wrap {
       padding: 18px 16px 12px;
       overflow-x: auto;
@@ -133,37 +131,50 @@
     }
     footer {
       text-align: center;
-      padding: 12px 16px 16px;
+      padding: 14px 16px 18px;
       font-size: 0.85rem;
       color: #4a5568;
       border-top: 1px solid #edf2f7;
       background: #f7fafc;
     }
-    footer .select-wrap {
+    footer .radio-wrap {
       display: flex;
       justify-content: center;
       align-items: center;
-      gap: 10px;
+      gap: 12px 18px;
       flex-wrap: wrap;
+      margin-top: 6px;
     }
-    footer label {
+    footer .radio-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+      padding: 6px 12px;
+      border-radius: 8px;
+      background: #edf2f7;
+      transition: background 0.15s;
+      user-select: none;
+    }
+    footer .radio-item:hover {
+      background: #e2e8f0;
+    }
+    footer .radio-item input {
+      accent-color: #2c5282;
+      width: 16px;
+      height: 16px;
+      cursor: pointer;
+    }
+    footer .radio-item span {
       font-weight: 600;
       color: #2d3748;
-    }
-    footer select {
-      padding: 7px 12px;
-      border-radius: 8px;
-      border: 1px solid #cbd5e0;
       font-size: 0.9rem;
-      background: #fff;
-      color: #2d3748;
-      cursor: pointer;
-      min-width: 120px;
     }
-    footer select:focus {
-      outline: none;
-      border-color: #2c5282;
-      box-shadow: 0 0 0 2px rgba(44, 82, 130, 0.2);
+    footer .radio-label {
+      font-weight: 600;
+      color: #2d3748;
+      margin-bottom: 4px;
+      display: block;
     }
     .placeholder {
       text-align: center;
@@ -172,158 +183,87 @@
       font-size: 0.95rem;
       line-height: 1.6;
     }
-    /* 모바일 대응 */
     @media (max-width: 640px) {
-      body {
-        padding: 8px;
-      }
-      .container {
-        border-radius: 8px;
-        max-width: 100%;
-      }
-      header {
-        padding: 14px 12px;
-      }
-      header h1 {
-        font-size: 1.35rem;
-      }
-      header p {
-        font-size: 0.85rem;
-      }
-      .table-wrap {
-        padding: 12px 6px 10px;
-      }
-      table {
-        font-size: 0.95rem;
-      }
-      th, td {
-        height: 56px;
-        padding: 6px 3px;
-      }
-      th.period {
-        width: 62px;
-        font-size: 0.9rem;
-      }
-      th.period .time {
-        font-size: 0.72rem;
-      }
-      .cell-content .code {
-        font-size: 1.05rem;
-      }
-      .cell-content .subject {
-        font-size: 0.85rem;
-      }
-      .controls {
-        padding: 12px 10px;
-        gap: 8px;
-      }
-      .controls button, .controls label.btn {
-        padding: 8px 14px;
-        font-size: 0.9rem;
-      }
-      footer {
-        padding: 10px 12px 14px;
-      }
-      footer select {
-        font-size: 0.88rem;
-        padding: 6px 10px;
-      }
+      body { padding: 8px; }
+      .container { border-radius: 8px; max-width: 100%; }
+      header { padding: 14px 12px; }
+      header h1 { font-size: 1.35rem; }
+      header p { font-size: 0.85rem; }
+      .table-wrap { padding: 12px 6px 10px; }
+      table { font-size: 0.95rem; }
+      th, td { height: 56px; padding: 6px 3px; }
+      th.period { width: 62px; font-size: 0.9rem; }
+      th.period .time { font-size: 0.72rem; }
+      .cell-content .code { font-size: 1.05rem; }
+      .cell-content .subject { font-size: 0.85rem; }
+      .controls { padding: 12px 10px; gap: 8px; }
+      .controls button, .controls label.btn { padding: 8px 14px; font-size: 0.9rem; }
+      footer { padding: 10px 12px 14px; }
+      footer .radio-item span { font-size: 0.85rem; }
     }
-
-    /* 아주 작은 화면 */
     @media (max-width: 380px) {
-      th, td {
-        height: 52px;
-        padding: 5px 2px;
-      }
-      th.period {
-        width: 56px;
-        font-size: 0.85rem;
-      }
-      th.period .time {
-        font-size: 0.68rem;
-      }
-      .cell-content .code {
-        font-size: 0.95rem;
-      }
-      .cell-content .subject {
-        font-size: 0.78rem;
-      }
-      header h1 {
-        font-size: 1.25rem;
-      }
+      th, td { height: 52px; padding: 5px 2px; }
+      th.period { width: 56px; font-size: 0.85rem; }
+      th.period .time { font-size: 0.68rem; }
+      .cell-content .code { font-size: 0.95rem; }
+      .cell-content .subject { font-size: 0.78rem; }
+      header h1 { font-size: 1.25rem; }
     }
   </style>
 </head>
-
 <body>
   <div class="container">
     <header>
       <h1>개인 시간표</h1>
       <p id="date-range"></p>
     </header>
-
     <div class="controls">
       <label class="btn">
         📂 엑셀 직접 선택
         <input type="file" id="fileInput" accept=".xlsx,.xls">
       </label>
       <button type="button" id="reloadBtn" style="display:none;">🔄 서버에서 다시 불러오기</button>
-
       <div class="status" id="status"></div>
     </div>
-
     <div class="table-wrap" id="tableArea">
       <div class="placeholder">
-        서버에서 <strong>table1.xlsx</strong>를 자동으로 불러오는 중...<br>
+        서버에서 시간표 파일을 찾는 중...<br>
         실패하면 아래 버튼으로 직접 선택하세요.
       </div>
     </div>
-
     <footer>
-      <div class="select-wrap">
-        <label for="tableSelect">시간표 파일 선택</label>
-        <select id="tableSelect">
-          <option value="table1" selected>table1</option>
-          <option value="table2">table2</option>
-          <option value="table3">table3</option>
-          <option value="table4">table4</option>
-          <option value="table5">table5</option>
-        </select>
+      <span class="radio-label">시간표 파일 선택</span>
+      <div class="radio-wrap" id="radioWrap">
+        <!-- 여기에 동적으로 라디오 버튼이 생성됩니다 -->
       </div>
     </footer>
   </div>
 
   <script>
-    // 학급 번호별 색상 팔레트 (충분한 개수)
     const COLOR_PALETTE = [
-      { bg: "#fed7d7", fg: "#9b2c2c" }, // 빨강
-      { bg: "#feebc8", fg: "#9c4221" }, // 주황
-      { bg: "#fefcbf", fg: "#975a16" }, // 노랑
-      { bg: "#c6f6d5", fg: "#276749" }, // 초록
-      { bg: "#bee3f8", fg: "#2b6cb0" }, // 파랑
-      { bg: "#e9d8fd", fg: "#553c9a" }, // 보라
-      { bg: "#fbb6ce", fg: "#97266d" }, // 분홍
-      { bg: "#b2f5ea", fg: "#285e61" }, // 청록
-      { bg: "#faf089", fg: "#744210" }, // 연노랑
-      { bg: "#c3dafe", fg: "#3c366b" }, // 남색
-      { bg: "#fbd38d", fg: "#7b341e" }, // 살구
-      { bg: "#9ae6b4", fg: "#22543d" }, // 연두
-      { bg: "#90cdf4", fg: "#2a4365" }, // 하늘
-      { bg: "#d6bcfa", fg: "#44337a" }, // 연보라
-      { bg: "#feb2b2", fg: "#822727" }, // 연분홍
-      { bg: "#81e6d9", fg: "#234e52" }, // 민트
+      { bg: "#fed7d7", fg: "#9b2c2c" },
+      { bg: "#feebc8", fg: "#9c4221" },
+      { bg: "#fefcbf", fg: "#975a16" },
+      { bg: "#c6f6d5", fg: "#276749" },
+      { bg: "#bee3f8", fg: "#2b6cb0" },
+      { bg: "#e9d8fd", fg: "#553c9a" },
+      { bg: "#fbb6ce", fg: "#97266d" },
+      { bg: "#b2f5ea", fg: "#285e61" },
+      { bg: "#faf089", fg: "#744210" },
+      { bg: "#c3dafe", fg: "#3c366b" },
+      { bg: "#fbd38d", fg: "#7b341e" },
+      { bg: "#9ae6b4", fg: "#22543d" },
+      { bg: "#90cdf4", fg: "#2a4365" },
+      { bg: "#d6bcfa", fg: "#44337a" },
+      { bg: "#feb2b2", fg: "#822727" },
+      { bg: "#81e6d9", fg: "#234e52" },
     ];
-
-    // 이번 시간표에 등장하는 고유 번호에 순서대로 색 배정
     let colorCache = {};
     let nextColorIndex = 0;
-
     function resetColors() {
       colorCache = {};
       nextColorIndex = 0;
     }
-
     function getColor(code) {
       if (!code) return { bg: "#edf2f7", fg: "#4a5568" };
       if (colorCache[code]) return colorCache[code];
@@ -332,7 +272,6 @@
       nextColorIndex++;
       return color;
     }
-
     const DAY_COLORS = ["#e53e3e", "#dd6b20", "#d69e2e", "#38a169", "#3182ce"];
 
     const fileInput = document.getElementById("fileInput");
@@ -340,10 +279,13 @@
     const tableArea = document.getElementById("tableArea");
     const dateRangeEl = document.getElementById("date-range");
     const reloadBtn = document.getElementById("reloadBtn");
-    const tableSelect = document.getElementById("tableSelect");
+    const radioWrap = document.getElementById("radioWrap");
 
     let lastFile = null;
-    let currentTable = "table1";  // 기본값
+    let currentTable = "table1.xlsx"; // 기본값 (파일명 포함)
+
+    // 기본 폴백 목록
+    const DEFAULT_FILES = ["table1.xlsx", "table2.xlsx", "table3.xlsx", "table4.xlsx", "table5.xlsx"];
 
     fileInput.addEventListener("change", (e) => {
       const file = e.target.files[0];
@@ -359,129 +301,154 @@
       });
     });
 
-    // 선택 변경 시 해당 파일 로드
-    tableSelect.addEventListener("change", () => {
-      currentTable = tableSelect.value;
-      loadExcelFromServer();
-    });
-
     function setStatus(msg, type = "") {
       statusEl.textContent = msg;
       statusEl.className = "status " + type;
     }
 
-    // 서버(또는 같은 폴더)에서 엑셀 파일 fetch
-    async function loadExcelFromServer() {
-      const url = currentTable + ".xlsx";
-      setStatus(`서버에서 ${url} 불러오는 중...`, "");
+    // 서버 폴더에서 .xlsx 파일 목록 가져오기
+    async function discoverXlsxFiles() {
       try {
-        const response = await fetch(url + "?t=" + Date.now()); // 캐시 방지
-        if (!response.ok) throw new Error("파일을 찾을 수 없습니다 (" + response.status + ")");
+        const response = await fetch("./?t=" + Date.now());
+        if (!response.ok) throw new Error("디렉터리 접근 실패");
 
-        const buffer = await response.arrayBuffer();
-        processExcelData(new Uint8Array(buffer), url);
-        // 성공적으로 로드되면 컨트롤 영역 숨김
-        document.querySelector(".controls").classList.add("hidden");
-        return true;
+        const html = await response.text();
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, "text/html");
 
+        // 다양한 서버의 디렉터리 리스팅을 최대한 커버
+        const links = Array.from(doc.querySelectorAll("a"))
+          .map(a => a.getAttribute("href") || "")
+          .filter(href => {
+            const lower = href.toLowerCase();
+            return lower.endsWith(".xlsx") || lower.endsWith(".xls");
+          })
+          .map(href => {
+            // "./table1.xlsx" 또는 "table1.xlsx" → "table1.xlsx"
+            return href.replace(/^\.\//, "").split("/").pop();
+          });
+
+        // 중복 제거 + 정렬
+        const unique = [...new Set(links)].filter(Boolean).sort();
+        if (unique.length === 0) throw new Error("xlsx 파일 없음");
+
+        return unique;
       } catch (err) {
-        console.warn("자동 로드 실패:", err.message);
+        console.warn("디렉터리 탐색 실패, 기본 목록 사용:", err.message);
+        return DEFAULT_FILES;
+      }
+    }
 
-        // table1이 아닌 경우 table1로 폴백
-        if (currentTable !== "table1") {
-          setStatus(`${url} 없음 → table1.xlsx로 전환합니다`, "error");
-          currentTable = "table1";
-          tableSelect.value = "table1";
-          // 재귀적으로 table1 로드 시도
-          return loadExcelFromServer();
+    // 라디오 버튼 생성
+    function renderRadios(files) {
+      radioWrap.innerHTML = "";
+      files.forEach((file, idx) => {
+        const id = "radio_" + idx;
+        const labelText = file.replace(/\.xlsx?$/i, ""); // 확장자 제거한 제목
+
+        const label = document.createElement("label");
+        label.className = "radio-item";
+        label.htmlFor = id;
+
+        const input = document.createElement("input");
+        input.type = "radio";
+        input.name = "tableFile";
+        input.id = id;
+        input.value = file;
+        if (file === currentTable || (idx === 0 && !files.includes(currentTable))) {
+          input.checked = true;
+          currentTable = file;
         }
 
+        input.addEventListener("change", () => {
+          if (input.checked) {
+            currentTable = file;
+            loadExcelFromServer();
+          }
+        });
+
+        const span = document.createElement("span");
+        span.textContent = labelText;
+
+        label.appendChild(input);
+        label.appendChild(span);
+        radioWrap.appendChild(label);
+      });
+    }
+
+    // 서버에서 파일 로드
+    async function loadExcelFromServer() {
+      const url = currentTable;
+      setStatus(`서버에서 ${url} 불러오는 중...`, "");
+      try {
+        const response = await fetch(url + "?t=" + Date.now());
+        if (!response.ok) throw new Error("파일을 찾을 수 없습니다 (" + response.status + ")");
+        const buffer = await response.arrayBuffer();
+        processExcelData(new Uint8Array(buffer), url);
+        document.querySelector(".controls").classList.add("hidden");
+        return true;
+      } catch (err) {
+        console.warn("자동 로드 실패:", err.message);
         setStatus("자동 로드 실패 → 파일을 직접 선택해주세요", "error");
         return false;
       }
     }
 
-    // 사용자가 선택한 파일로 로드
+    // 사용자 선택 파일 로드
     function loadExcelFromFile(file) {
       setStatus("읽는 중...", "");
       const reader = new FileReader();
-
       reader.onload = function (e) {
         try {
           processExcelData(new Uint8Array(e.target.result), file.name);
-          // 성공적으로 로드되면 컨트롤 영역 숨김
           document.querySelector(".controls").classList.add("hidden");
-
         } catch (err) {
           console.error(err);
           setStatus("❌ 파일을 읽는 중 오류: " + err.message, "error");
           tableArea.innerHTML = `<div class="placeholder">오류가 발생했습니다.<br>${err.message}</div>`;
         }
       };
-
-      reader.onerror = () => {
-        setStatus("❌ 파일 읽기 실패", "error");
-      };
-
+      reader.onerror = () => setStatus("❌ 파일 읽기 실패", "error");
       reader.readAsArrayBuffer(file);
     }
 
-    // 공통 처리 함수
     function processExcelData(data, sourceName) {
       const workbook = XLSX.read(data, { type: "array" });
       const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
       const rows = XLSX.utils.sheet_to_json(firstSheet, { header: 1, defval: null });
-
       if (!rows || rows.length < 2) {
         throw new Error("엑셀에 데이터가 없습니다.");
       }
-
-      resetColors();  // 새 파일 로드 시 색상 다시 배정
+      resetColors();
       const { days, schedule } = parseSchedule(rows);
       renderTable(days, schedule);
-      dateRangeEl.textContent = "";
+      dateRangeEl.textContent = sourceName ? `파일: ${sourceName}` : "";
     }
 
-    // 페이지 로드 시 자동으로 table1.xlsx 시도
-    loadExcelFromServer();
-
-
     function parseSchedule(rows) {
-      // rows[0] = ['교시', '월(24)', '화(25)', ...]
       const header = rows[0];
-      // 날짜 부분 제거: "월(24)" → "월"
       const days = header.slice(1).map(h => {
         if (h == null) return "";
         return String(h).replace(/\s*\(\d+\)\s*$/, "").trim();
       });
-
-
       const schedule = [];
       let i = 1;
-
       while (i < rows.length) {
         const row = rows[i];
         const periodLabel = row[0];
-
         if (periodLabel == null || periodLabel === "") {
           i++;
           continue;
         }
-
         let periodNum = String(periodLabel).trim();
         let timeStr = "";
-
         if (periodNum.includes("(") && periodNum.includes(")")) {
           const open = periodNum.indexOf("(");
           const close = periodNum.indexOf(")");
           timeStr = periodNum.substring(open + 1, close);
           periodNum = periodNum.substring(0, open).trim();
         }
-
-        // 코드 행
         const rawCodes = row.slice(1).map(c => (c == null ? "" : String(c).trim()));
-
-        // 다음 행이 과목 행인지 확인 (첫 열이 null인 경우)
         let subjects = new Array(rawCodes.length).fill("");
         if (i + 1 < rows.length && (rows[i + 1][0] == null || rows[i + 1][0] === "")) {
           subjects = rows[i + 1].slice(1).map(s => (s == null ? "" : String(s).trim()));
@@ -489,26 +456,20 @@
         } else {
           i += 1;
         }
-
-        // 숫자(학급번호)가 아닌 값은 과목명으로 취급 (예: 동아리)
         const cells = rawCodes.map((val, idx) => {
           const isNumeric = /^\d+$/.test(val);
           if (isNumeric) {
             return { code: val, subject: subjects[idx] || "" };
           } else if (val) {
-            // 동아리처럼 번호 자리에 글자가 있는 경우
             return { code: "", subject: val };
           } else {
             return { code: "", subject: subjects[idx] || "" };
           }
         });
-
-        // 8교시는 생략
         if (periodNum !== "8") {
           schedule.push({ period: periodNum, time: timeStr, cells });
         }
       }
-
       return { days, schedule };
     }
 
@@ -518,12 +479,10 @@
         const color = DAY_COLORS[idx] || "#4a5568";
         dayThs += `<th style="background:${color}">${day}</th>`;
       });
-
       let bodyRows = "";
       for (const item of schedule) {
         const timeHtml = item.time ? `<span class="time">${item.time}</span>` : "";
         let cellsHtml = "";
-
         for (const cell of item.cells) {
           if (!cell.code && !cell.subject) {
             cellsHtml += `<td class="empty"></td>`;
@@ -536,14 +495,12 @@
             </td>`;
           }
         }
-
         bodyRows += `
           <tr>
             <th class="period">${item.period}${timeHtml}</th>
             ${cellsHtml}
           </tr>`;
       }
-
       tableArea.innerHTML = `
         <table>
           <thead>
@@ -558,7 +515,7 @@
         </table>`;
     }
 
-    // 드래그 앤 드롭 지원
+    // 드래그 앤 드롭
     const dropZone = document.querySelector(".container");
     dropZone.addEventListener("dragover", (e) => {
       e.preventDefault();
@@ -574,6 +531,14 @@
         setStatus("엑셀 파일(.xlsx)만 가능합니다.", "error");
       }
     });
+
+    // 초기화
+    (async function init() {
+      const files = await discoverXlsxFiles();
+      renderRadios(files);
+      // 첫 번째(또는 선택된) 파일 자동 로드
+      await loadExcelFromServer();
+    })();
   </script>
 </body>
 </html>

@@ -241,6 +241,11 @@
   </div>
 
   <script>
+    // ==================== 설정 ====================
+    const GITHUB_OWNER = "ziny88";
+    const GITHUB_REPO = "table";
+    // ============================================
+
     const COLOR_PALETTE = [
       { bg: "#fed7d7", fg: "#9b2c2c" },
       { bg: "#feebc8", fg: "#9c4221" },
@@ -286,7 +291,7 @@
     let currentTable = "table1.xlsx";
 
     // 기본 폴백 목록
-    const DEFAULT_FILES = ["table1.xlsx", "table2.xlsx", "table3.xlsx", "table4.xlsx", "table5.xlsx"];
+    const DEFAULT_FILES = ["table.xlsx", "table1.xlsx", "table2.xlsx", "table3.xlsx", "table4.xlsx"];
 
     fileInput.addEventListener("change", (e) => {
       const file = e.target.files[0];
@@ -302,7 +307,6 @@
       });
     });
 
-    // 드롭다운 변경 시 로드
     tableSelect.addEventListener("change", () => {
       currentTable = tableSelect.value;
       loadExcelFromServer();
@@ -313,30 +317,27 @@
       statusEl.className = "status " + type;
     }
 
-    // 서버 폴더에서 .xlsx 파일 목록 가져오기
+    // GitHub API로 .xlsx 파일 목록 가져오기
     async function discoverXlsxFiles() {
       try {
-        const response = await fetch("./?t=" + Date.now());
-        if (!response.ok) throw new Error("디렉터리 접근 실패");
+        const url = `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/`;
+        const response = await fetch(url);
+        if (!response.ok) throw new Error("GitHub API 요청 실패 (" + response.status + ")");
 
-        const html = await response.text();
-        const parser = new DOMParser();
-        const doc = parser.parseFromString(html, "text/html");
+        const data = await response.json();
+        if (!Array.isArray(data)) throw new Error("잘못된 응답 형식");
 
-        const links = Array.from(doc.querySelectorAll("a"))
-          .map(a => a.getAttribute("href") || "")
-          .filter(href => {
-            const lower = href.toLowerCase();
-            return lower.endsWith(".xlsx") || lower.endsWith(".xls");
-          })
-          .map(href => href.replace(/^\.\//, "").split("/").pop());
+        const xlsxFiles = data
+          .filter(item => item.type === "file" && /\.xlsx?$/i.test(item.name))
+          .map(item => item.name)
+          .sort();
 
-        const unique = [...new Set(links)].filter(Boolean).sort();
-        if (unique.length === 0) throw new Error("xlsx 파일 없음");
+        if (xlsxFiles.length === 0) throw new Error("xlsx 파일 없음");
 
-        return unique;
+        console.log("발견된 파일:", xlsxFiles);
+        return xlsxFiles;
       } catch (err) {
-        console.warn("디렉터리 탐색 실패, 기본 목록 사용:", err.message);
+        console.warn("GitHub API 실패, 기본 목록 사용:", err.message);
         return DEFAULT_FILES;
       }
     }
@@ -347,7 +348,7 @@
       files.forEach((file, idx) => {
         const option = document.createElement("option");
         option.value = file;
-        option.textContent = file.replace(/\.xlsx?$/i, ""); // 확장자 제거한 제목
+        option.textContent = file.replace(/\.xlsx?$/i, ""); // 확장자 제거
         if (file === currentTable || (idx === 0 && !files.includes(currentTable))) {
           option.selected = true;
           currentTable = file;
@@ -356,7 +357,7 @@
       });
     }
 
-    // 서버에서 파일 로드
+    // 서버(GitHub Pages)에서 파일 로드
     async function loadExcelFromServer() {
       const url = currentTable;
       setStatus(`서버에서 ${url} 불러오는 중...`, "");

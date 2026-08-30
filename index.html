@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>개인 시간표</title>
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Segoe UI', 'Malgun Gothic', 'Apple SD Gothic Neo', sans-serif;
+      background: #f0f2f5;
+      color: #222;
+      padding: 24px;
+      min-height: 100vh;
+    }
+    .container {
+      max-width: 920px;
+      margin: 0 auto;
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+      overflow: hidden;
+    }
+    header {
+      background: linear-gradient(135deg, #1e3a5f 0%, #2c5282 100%);
+      color: white;
+      padding: 18px 24px;
+      text-align: center;
+    }
+    .header-title {
+      display: flex;
+      justify-content: center;
+      align-items: baseline;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    header h1 {
+      font-size: 1.45rem;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+    }
+    #file-name {
+      font-size: 1.05rem;
+      font-weight: 500;
+      opacity: 0.9;
+      letter-spacing: -0.3px;
+    }
+    .controls {
+      padding: 16px 20px;
+      background: #f7fafc;
+      border-bottom: 1px solid #e2e8f0;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: center;
+      justify-content: center;
+    }
+    .controls.hidden {
+      display: none !important;
+    }
+    .controls button, .controls label.btn {
+      background: #2c5282;
+      color: white;
+      border: none;
+      padding: 10px 18px;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .controls button:hover, .controls label.btn:hover {
+      background: #1e3a5f;
+    }
+    .controls input[type="file"] {
+      display: none;
+    }
+    .status {
+      font-size: 0.85rem;
+      color: #4a5568;
+      text-align: center;
+      width: 100%;
+    }
+    .status.error { color: #c53030; }
+    .status.success { color: #276749; }
+    .table-wrap {
+      padding: 18px 16px 12px;
+      overflow-x: auto;
+      min-height: 200px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      table-layout: fixed;
+      font-size: 0.92rem;
+    }
+    th, td {
+      border: 1px solid #d1d5db;
+      text-align: center;
+      vertical-align: middle;
+      padding: 8px 4px;
+      height: 58px;
+    }
+    th {
+      font-weight: 700;
+      color: #fff;
+      font-size: 0.95rem;
+    }
+    th.period {
+      background: #4a5568;
+      width: 78px;
+      font-size: 0.88rem;
+      line-height: 1.3;
+    }
+    th.period .time {
+      display: block;
+      font-size: 0.75rem;
+      font-weight: 500;
+      opacity: 0.9;
+      margin-top: 1px;
+    }
+    .empty { background: #f7fafc; }
+    .cell-content {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 1px;
+      line-height: 1.2;
+    }
+    .cell-content .code {
+      font-weight: 700;
+      font-size: 1rem;
+    }
+    .cell-content .subject {
+      font-size: 0.82rem;
+      opacity: 0.95;
+    }
+    footer {
+      text-align: center;
+      padding: 14px 16px 18px;
+      font-size: 0.85rem;
+      color: #4a5568;
+      border-top: 1px solid #edf2f7;
+      background: #f7fafc;
+    }
+    footer .select-wrap {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    footer label {
+      font-weight: 600;
+      color: #2d3748;
+    }
+    footer select {
+      padding: 8px 14px;
+      border-radius: 8px;
+      border: 1px solid #cbd5e0;
+      font-size: 0.95rem;
+      background: #fff;
+      color: #2d3748;
+      cursor: pointer;
+      min-width: 160px;
+      font-weight: 500;
+    }
+    footer select:focus {
+      outline: none;
+      border-color: #2c5282;
+      box-shadow: 0 0 0 2px rgba(44, 82, 130, 0.2);
+    }
+    .placeholder {
+      text-align: center;
+      padding: 40px 20px;
+      color: #718096;
+      font-size: 0.95rem;
+      line-height: 1.6;
+    }
+    @media (max-width: 640px) {
+      body { padding: 8px; }
+      .container { border-radius: 8px; max-width: 100%; }
+      header { padding: 14px 12px; }
+      header h1 { font-size: 1.35rem; }
+      #file-name { font-size: 0.95rem; }
+      .table-wrap { padding: 12px 6px 10px; }
+      table { font-size: 0.95rem; }
+      th, td { height: 56px; padding: 6px 3px; }
+      th.period { width: 62px; font-size: 0.9rem; }
+      th.period .time { font-size: 0.72rem; }
+      .cell-content .code { font-size: 1.05rem; }
+      .cell-content .subject { font-size: 0.85rem; }
+      .controls { padding: 12px 10px; gap: 8px; }
+      .controls button, .controls label.btn { padding: 8px 14px; font-size: 0.9rem; }
+      footer { padding: 10px 12px 14px; }
+      footer select { font-size: 0.9rem; padding: 7px 12px; min-width: 140px; }
+    }
+    @media (max-width: 380px) {
+      th, td { height: 52px; padding: 5px 2px; }
+      th.period { width: 56px; font-size: 0.85rem; }
+      th.period .time { font-size: 0.68rem; }
+      .cell-content .code { font-size: 0.95rem; }
+      .cell-content .subject { font-size: 0.78rem; }
+      header h1 { font-size: 1.25rem; }
+      #file-name { font-size: 0.9rem; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="header-title">
+        <h1>개인 시간표</h1>
+        <span id="file-name"></span>
+      </div>
+    </header>
+    <div class="controls">
+      <label class="btn">
+        📂 엑셀 직접 선택
+        <input type="file" id="fileInput" accept=".xlsx,.xls">
+      </label>
+      <button type="button" id="reloadBtn" style="display:none;">🔄 서버에서 다시 불러오기</button>
+      <div class="status" id="status"></div>
+    </div>
+    <div class="table-wrap" id="tableArea">
+      <div class="placeholder">
+        서버에서 시간표 파일을 찾는 중...<br>
+        실패하면 아래 버튼으로 직접 선택하세요.
+      </div>
+    </div>
+    <footer>
+      <div class="select-wrap">
+        <label for="tableSelect">시간표 파일 선택</label>
+        <select id="tableSelect">
+          <!-- 동적으로 채워집니다 -->
+        </select>
+      </div>
+    </footer>
+  </div>
+
+  <script>
+    // ==================== 설정 ====================
+    const GITHUB_OWNER = "ziny88";
+    const GITHUB_REPO = "table";
+    // ============================================
+
+    const COLOR_PALETTE = [
+      { bg: "#fed7d7", fg: "#9b2c2c" },
+      { bg: "#feebc8", fg: "#9c4221" },
+      { bg: "#fefcbf", fg: "#975a16" },
+      { bg: "#c6f6d5", fg: "#276749" },
+      { bg: "#bee3f8", fg: "#2b6cb0" },
+      { bg: "#e9d8fd", fg: "#553c9a" },
+      { bg: "#fbb6ce", fg: "#97266d" },
+      { bg: "#b2f5ea", fg: "#285e61" },
+      { bg: "#faf089", fg: "#744210" },
+      { bg: "#c3dafe", fg: "#3c366b" },
+      { bg: "#fbd38d", fg: "#7b341e" },
+      { bg: "#9ae6b4", fg: "#22543d" },
+      { bg: "#90cdf4", fg: "#2a4365" },
+      { bg: "#d6bcfa", fg: "#44337a" },
+      { bg: "#feb2b2", fg: "#822727" },
+      { bg: "#81e6d9", fg: "#234e52" },
+    ];
+    let colorCache = {};
+    let nextColorIndex = 0;
+    function resetColors() {
+      colorCache = {};
+      nextColorIndex = 0;
+    }
+    function getColor(code) {
+      if (!code) return { bg: "#edf2f7", fg: "#4a5568" };
+      if (colorCache[code]) return colorCache[code];
+      const color = COLOR_PALETTE[nextColorIndex % COLOR_PALETTE.length];
+      colorCache[code] = color;
+      nextColorIndex++;
+      return color;
+    }
+    const DAY_COLORS = ["#e53e3e", "#dd6b20", "#d69e2e", "#38a169", "#3182ce"];
+
+    const fileInput = document.getElementById("fileInput");
+    const statusEl = document.getElementById("status");
+    const tableArea = document.getElementById("tableArea");
+    const fileNameEl = document.getElementById("file-name");
+    const reloadBtn = document.getElementById("reloadBtn");
+    const tableSelect = document.getElementById("tableSelect");
+
+    let lastFile = null;
+    let currentTable = "table1.xlsx";
+
+    // 기본 폴백 목록
+    const DEFAULT_FILES = ["table.xlsx", "table1.xlsx", "table2.xlsx", "table3.xlsx", "table4.xlsx"];
+
+    fileInput.addEventListener("change", (e) => {
+      const file = e.target.files[0];
+      if (file) {
+        lastFile = file;
+        loadExcelFromFile(file);
+      }
+    });
+
+    reloadBtn.addEventListener("click", () => {
+      loadExcelFromServer().catch(() => {
+        if (lastFile) loadExcelFromFile(lastFile);
+      });
+    });
+
+    tableSelect.addEventListener("change", () => {
+      currentTable = tableSelect.value;
+      loadExcelFromServer();
+    });
+
+    function setStatus(msg, type = "") {
+      statusEl.textContent = msg;
+      statusEl.className = "status " + type;
+    }
+
+    // GitHub API로 .xlsx 파일 목록 가져오기
+    async function discoverXlsxFiles() {
+      try {
+        const url = `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/`;
+        const response = await fetch(url);
+        if (!response.ok) throw new Error("GitHub API 요청 실패 (" + response.status + ")");
+
+        const data = await response.json();
+        if (!Array.isArray(data)) throw new Error("잘못된 응답 형식");
+
+        const xlsxFiles = data
+          .filter(item => item.type === "file" && /\.xlsx?$/i.test(item.name))
+          .map(item => item.name)
+          .sort();
+
+        if (xlsxFiles.length === 0) throw new Error("xlsx 파일 없음");
+
+        console.log("발견된 파일:", xlsxFiles);
+        return xlsxFiles;
+      } catch (err) {
+        console.warn("GitHub API 실패, 기본 목록 사용:", err.message);
+        return DEFAULT_FILES;
+      }
+    }
+
+    // 드롭다운 옵션 생성
+    function renderSelectOptions(files) {
+      tableSelect.innerHTML = "";
+      files.forEach((file, idx) => {
+        const option = document.createElement("option");
+        option.value = file;
+        option.textContent = file.replace(/\.xlsx?$/i, ""); // 확장자 제거
+        if (file === currentTable || (idx === 0 && !files.includes(currentTable))) {
+          option.selected = true;
+          currentTable = file;
+        }
+        tableSelect.appendChild(option);
+      });
+    }
+
+    // 서버(GitHub Pages)에서 파일 로드
+    async function loadExcelFromServer() {
+      const url = currentTable;
+      setStatus(`서버에서 ${url} 불러오는 중...`, "");
+      try {
+        const response = await fetch(url + "?t=" + Date.now());
+        if (!response.ok) throw new Error("파일을 찾을 수 없습니다 (" + response.status + ")");
+        const buffer = await response.arrayBuffer();
+        processExcelData(new Uint8Array(buffer), url);
+        document.querySelector(".controls").classList.add("hidden");
+        return true;
+      } catch (err) {
+        console.warn("자동 로드 실패:", err.message);
+        setStatus("자동 로드 실패 → 파일을 직접 선택해주세요", "error");
+        return false;
+      }
+    }
+
+    // 사용자 선택 파일 로드
+    function loadExcelFromFile(file) {
+      setStatus("읽는 중...", "");
+      const reader = new FileReader();
+      reader.onload = function (e) {
+        try {
+          processExcelData(new Uint8Array(e.target.result), file.name);
+          document.querySelector(".controls").classList.add("hidden");
+        } catch (err) {
+          console.error(err);
+          setStatus("❌ 파일을 읽는 중 오류: " + err.message, "error");
+          tableArea.innerHTML = `<div class="placeholder">오류가 발생했습니다.<br>${err.message}</div>`;
+        }
+      };
+      reader.onerror = () => setStatus("❌ 파일 읽기 실패", "error");
+      reader.readAsArrayBuffer(file);
+    }
+
+    function processExcelData(data, sourceName) {
+      const workbook = XLSX.read(data, { type: "array" });
+      const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json(firstSheet, { header: 1, defval: null });
+      if (!rows || rows.length < 2) {
+        throw new Error("엑셀에 데이터가 없습니다.");
+      }
+      resetColors();
+      const { days, schedule } = parseSchedule(rows);
+      renderTable(days, schedule);
+
+      // 파일명만 표시 (확장자 제거)
+      if (sourceName) {
+        const pureName = sourceName.replace(/\.xlsx?$/i, "");
+        fileNameEl.textContent = pureName;
+      } else {
+        fileNameEl.textContent = "";
+      }
+    }
+
+    function parseSchedule(rows) {
+      const header = rows[0];
+      const days = header.slice(1).map(h => {
+        if (h == null) return "";
+        return String(h).replace(/\s*\(\d+\)\s*$/, "").trim();
+      });
+      const schedule = [];
+      let i = 1;
+      while (i < rows.length) {
+        const row = rows[i];
+        const periodLabel = row[0];
+        if (periodLabel == null || periodLabel === "") {
+          i++;
+          continue;
+        }
+        let periodNum = String(periodLabel).trim();
+        let timeStr = "";
+        if (periodNum.includes("(") && periodNum.includes(")")) {
+          const open = periodNum.indexOf("(");
+          const close = periodNum.indexOf(")");
+          timeStr = periodNum.substring(open + 1, close);
+          periodNum = periodNum.substring(0, open).trim();
+        }
+        const rawCodes = row.slice(1).map(c => (c == null ? "" : String(c).trim()));
+        let subjects = new Array(rawCodes.length).fill("");
+        if (i + 1 < rows.length && (rows[i + 1][0] == null || rows[i + 1][0] === "")) {
+          subjects = rows[i + 1].slice(1).map(s => (s == null ? "" : String(s).trim()));
+          i += 2;
+        } else {
+          i += 1;
+        }
+        const cells = rawCodes.map((val, idx) => {
+          const isNumeric = /^\d+$/.test(val);
+          if (isNumeric) {
+            return { code: val, subject: subjects[idx] || "" };
+          } else if (val) {
+            return { code: "", subject: val };
+          } else {
+            return { code: "", subject: subjects[idx] || "" };
+          }
+        });
+        if (periodNum !== "8") {
+          schedule.push({ period: periodNum, time: timeStr, cells });
+        }
+      }
+      return { days, schedule };
+    }
+
+    function renderTable(days, schedule) {
+      let dayThs = "";
+      days.forEach((day, idx) => {
+        const color = DAY_COLORS[idx] || "#4a5568";
+        dayThs += `<th style="background:${color}">${day}</th>`;
+      });
+      let bodyRows = "";
+      for (const item of schedule) {
+        const timeHtml = item.time ? `<span class="time">${item.time}</span>` : "";
+        let cellsHtml = "";
+        for (const cell of item.cells) {
+          if (!cell.code && !cell.subject) {
+            cellsHtml += `<td class="empty"></td>`;
+          } else {
+            const colors = getColor(cell.code);
+            const codeHtml = cell.code ? `<span class="code">${cell.code}</span>` : "";
+            const subjHtml = cell.subject ? `<span class="subject">${cell.subject}</span>` : "";
+            cellsHtml += `<td style="background:${colors.bg};color:${colors.fg}">
+              <div class="cell-content">${codeHtml}${subjHtml}</div>
+            </td>`;
+          }
+        }
+        bodyRows += `
+          <tr>
+            <th class="period">${item.period}${timeHtml}</th>
+            ${cellsHtml}
+          </tr>`;
+      }
+      tableArea.innerHTML = `
+        <table>
+          <thead>
+            <tr>
+              <th class="period">교시</th>
+              ${dayThs}
+            </tr>
+          </thead>
+          <tbody>
+            ${bodyRows}
+          </tbody>
+        </table>`;
+    }
+
+    // 드래그 앤 드롭
+    const dropZone = document.querySelector(".container");
+    dropZone.addEventListener("dragover", (e) => {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = "copy";
+    });
+    dropZone.addEventListener("drop", (e) => {
+      e.preventDefault();
+      const file = e.dataTransfer.files[0];
+      if (file && (file.name.endsWith(".xlsx") || file.name.endsWith(".xls"))) {
+        lastFile = file;
+        loadExcelFromFile(file);
+      } else {
+        setStatus("엑셀 파일(.xlsx)만 가능합니다.", "error");
+      }
+    });
+
+    // 초기화
+    (async function init() {
+      const files = await discoverXlsxFiles();
+      renderSelectOptions(files);
+      await loadExcelFromServer();
+    })();
+  </script>
+</body>
+</html>
